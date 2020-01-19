@@ -1,11 +1,16 @@
 package icbm.classic.content.blocks.launcher.cruise;
 
 import com.builtbroken.jlib.data.vector.IPos3D;
+import dan200.computercraft.api.lua.ILuaContext;
+import dan200.computercraft.api.lua.LuaException;
+import dan200.computercraft.api.peripheral.IComputerAccess;
+import dan200.computercraft.api.peripheral.IPeripheral;
 import icbm.classic.api.ICBMClassicAPI;
 import icbm.classic.api.ICBMClassicHelpers;
 import icbm.classic.api.NBTConstants;
 import icbm.classic.api.reg.IExplosiveData;
 import icbm.classic.api.tile.IRadioWaveSender;
+import icbm.classic.computercraft.ICCServersPeripheral;
 import icbm.classic.content.blocks.launcher.TileLauncherPrefab;
 import icbm.classic.content.entity.missile.EntityMissile;
 import icbm.classic.content.entity.missile.MissileFlightType;
@@ -38,7 +43,10 @@ import net.minecraftforge.fml.common.network.ByteBufUtils;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
-public class TileCruiseLauncher extends TileLauncherPrefab implements IPacketIDReceiver, IGuiTile, IInventoryProvider<ExternalInventory>
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
+public class TileCruiseLauncher extends TileLauncherPrefab implements IPacketIDReceiver, IGuiTile, IInventoryProvider<ExternalInventory>, ICCServersPeripheral
 {
     public static final int DESCRIPTION_PACKET_ID = 0;
     public static final int SET_FREQUENCY_PACKET_ID = 1;
@@ -466,5 +474,57 @@ public class TileCruiseLauncher extends TileLauncherPrefab implements IPacketIDR
     public Object getClientGuiElement(int ID, EntityPlayer player)
     {
         return new GuiCruiseLauncher(player, this);
+    }
+
+    @Nonnull
+    @Override
+    public String getType() {
+        return "icbm_cruise_launcher_control";
+    }
+
+    @Nonnull
+    @Override
+    public String[] getMethodNames() {
+        return new String[]{"getStatus", "setTarget", "launchMissile"};
+    }
+
+    @Nullable
+    @Override
+    public Object[] callMethod(@Nonnull IComputerAccess iComputerAccess, @Nonnull ILuaContext iLuaContext, int method, @Nonnull Object[] arguments) throws LuaException, InterruptedException {
+        switch (method) {
+            case 0: {
+                return new Object[]{getStatus().substring(2)};
+            }
+            case 1: {
+                if (arguments.length < 3) throw new LuaException("Expected 3 parameters: x,y,z");
+                if (!(arguments[0] instanceof Double)) throw new LuaException("Expected number for parameter 1");
+                if (!(arguments[1] instanceof Double)) throw new LuaException("Expected number for parameter 2");
+                if (!(arguments[2] instanceof Double)) throw new LuaException("Expected number for parameter 3");
+
+                setTarget(new Pos((Double)arguments[0],(Double)arguments[1],(Double)arguments[2]));
+
+            }
+            case 2: {
+                return new Object[]{launch()};
+            }
+            default: {
+                throw new LuaException("Not yet implemented: " + getMethodNames()[method]);
+            }
+        }
+    }
+
+    @Override
+    public void attach(@Nonnull IComputerAccess computer) {
+
+    }
+
+    @Override
+    public void detach(@Nonnull IComputerAccess computer) {
+
+    }
+
+    @Override
+    public boolean equals(@Nullable IPeripheral iPeripheral) {
+        return false;
     }
 }

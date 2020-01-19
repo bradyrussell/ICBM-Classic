@@ -1,5 +1,6 @@
 package icbm.classic;
 
+import dan200.computercraft.api.ComputerCraftAPI;
 import icbm.classic.api.EnumTier;
 import icbm.classic.api.ICBMClassicAPI;
 import icbm.classic.api.NBTConstants;
@@ -90,7 +91,7 @@ public final class ICBMClassic
     public static final String BUILD_VERSION = "@BUILD@";
     public static final String MC_VERSION = "@MC@";
     public static final String VERSION = MC_VERSION + "-" + MAJOR_VERSION + "." + MINOR_VERSION + "." + REVISION_VERSION + "." + BUILD_VERSION;
-    public static final String DEPENDENCIES = "";
+    public static final String DEPENDENCIES = "required-after:computercraft";
 
     public static final int MAP_HEIGHT = 255;
 

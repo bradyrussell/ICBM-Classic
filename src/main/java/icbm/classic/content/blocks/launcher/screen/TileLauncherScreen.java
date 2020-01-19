@@ -1,7 +1,12 @@
 package icbm.classic.content.blocks.launcher.screen;
 
 import com.builtbroken.jlib.data.vector.IPos3D;
+import dan200.computercraft.api.lua.ILuaContext;
+import dan200.computercraft.api.lua.LuaException;
+import dan200.computercraft.api.peripheral.IComputerAccess;
+import dan200.computercraft.api.peripheral.IPeripheral;
 import icbm.classic.api.tile.IRadioWaveSender;
+import icbm.classic.computercraft.ICCServersPeripheral;
 import icbm.classic.config.ConfigLauncher;
 import icbm.classic.content.blocks.launcher.TileLauncherPrefab;
 import icbm.classic.content.blocks.launcher.base.TileLauncherBase;
@@ -22,13 +27,16 @@ import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.util.text.TextComponentString;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 /**
  * This tile entity is for the screen of the missile launcher
  *
  * @author Calclavia
  */
 @SuppressWarnings("incomplete-switch")
-public class TileLauncherScreen extends TileLauncherPrefab implements IPacketIDReceiver, IInventoryProvider<ExternalInventory>
+public class TileLauncherScreen extends TileLauncherPrefab implements IPacketIDReceiver, IInventoryProvider<ExternalInventory>, ICCServersPeripheral
 {
     // The missile launcher base in which this
     // screen is connected with
@@ -335,5 +343,64 @@ public class TileLauncherScreen extends TileLauncherPrefab implements IPacketIDR
                 }
             }
         }
+    }
+
+    @Nonnull
+    @Override
+    public String getType() {
+        return "icbm_launcher_control";
+    }
+
+    @Nonnull
+    @Override
+    public String[] getMethodNames() {
+        return new String[]{"getStatus", "setTarget", "setLockHeight", "launchMissile"};
+    }
+
+    @Nullable
+    @Override
+    public Object[] callMethod(@Nonnull IComputerAccess iComputerAccess, @Nonnull ILuaContext iLuaContext, int method, @Nonnull Object[] arguments) throws LuaException, InterruptedException {
+        switch (method) {
+            case 0: {
+                return new Object[]{getStatus().substring(2)};
+            }
+            case 1: {
+                if (arguments.length < 3) throw new LuaException("Expected 3 parameters: x,y,z");
+                if (!(arguments[0] instanceof Double)) throw new LuaException("Expected number for parameter 1");
+                if (!(arguments[1] instanceof Double)) throw new LuaException("Expected number for parameter 2");
+                if (!(arguments[2] instanceof Double)) throw new LuaException("Expected number for parameter 3");
+
+                setTarget(new Pos((Double)arguments[0],(Double)arguments[1],(Double)arguments[2]));
+
+            }
+            case 2: {
+                if (arguments.length < 1) throw new LuaException("Expected 1 parameter: height");
+                if (!(arguments[0] instanceof Double)) throw new LuaException("Expected number for parameter 1");
+
+                this.lockHeight = (short) Math.floor((Double)arguments[0]);
+                return new Object[]{this.lockHeight == (short) Math.floor((Double)arguments[0])};
+            }
+            case 3: {
+                return new Object[]{launch()};
+            }
+            default: {
+                throw new LuaException("Not yet implemented: " + getMethodNames()[method]);
+            }
+        }
+    }
+
+    @Override
+    public void attach(@Nonnull IComputerAccess computer) {
+
+    }
+
+    @Override
+    public void detach(@Nonnull IComputerAccess computer) {
+
+    }
+
+    @Override
+    public boolean equals(@Nullable IPeripheral iPeripheral) {
+        return false;
     }
 }

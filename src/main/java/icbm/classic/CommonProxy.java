@@ -1,5 +1,7 @@
 package icbm.classic;
 
+import dan200.computercraft.api.ComputerCraftAPI;
+import icbm.classic.computercraft.ICCServersPeripheral;
 import icbm.classic.prefab.tile.IGuiTile;
 import icbm.classic.content.entity.missile.EntityMissile;
 import icbm.classic.lib.transform.vector.Pos;
@@ -36,7 +38,7 @@ public class CommonProxy implements IGuiHandler
 
     public void postInit()
     {
-
+        ComputerCraftAPI.registerPeripheralProvider(new ICCServersPeripheral.Provider());
     }
 
     public void loadComplete()
