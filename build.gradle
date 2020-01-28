@@ -14,6 +14,7 @@ buildscript {
     dependencies {
         classpath 'net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT'
     }
+
 }
 
 plugins {
@@ -31,7 +32,24 @@ plugins {
   id "org.ajoberstar.grgit" version "2.1.0"
 }
 
+apply plugin: 'java'
+apply plugin: 'idea'
 apply from: 'https://raw.githubusercontent.com/BuiltBrokenModding/BuiltBrokenScripts/1.12.2/index/index.gradle'
+
+repositories {
+    maven { url 'https://squiddev.cc/maven/' }
+}
+
+dependencies {
+    implementation "org.squiddev:cc-tweaked-1.12.2:1.86.2"
+}
+
+repositories {
+    maven { url = "http://maven.cil.li/" }
+}
+dependencies {
+    compile "li.cil.oc:OpenComputers:MC1.12.2-1.7.5.192+:api"
+}
 
 dependencies
 {
@@ -39,8 +57,16 @@ dependencies
     testImplementation 'org.mockito:mockito-inline:2.13.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.4.2'
     testCompile 'org.junit.jupiter:junit-jupiter-params:5.4.2'
-    testCompile 'org.junit.jupiter:junit-jupiter-params:5.4.2'
     testCompile 'org.mockito:mockito-core:3.+'
+}
+
+idea {
+    module {
+        testOutputDir = file('output_tests')
+        inheritOutputDirs = false
+        downloadJavadoc = true
+        downloadSources = true
+    }
 }
 
 sourceCompatibility = 1.8
@@ -50,7 +76,7 @@ test {
     useJUnitPlatform()
 
     maxHeapSize = '1G'
-    failFast = true
+    failFast = false
     workingDir = './run_tests'
     mkdir './run_tests'
 }

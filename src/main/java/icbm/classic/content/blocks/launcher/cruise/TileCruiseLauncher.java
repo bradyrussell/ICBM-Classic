@@ -1,11 +1,16 @@
 package icbm.classic.content.blocks.launcher.cruise;
 
 import com.builtbroken.jlib.data.vector.IPos3D;
+import dan200.computercraft.api.lua.ILuaContext;
+import dan200.computercraft.api.lua.LuaException;
+import dan200.computercraft.api.peripheral.IComputerAccess;
+import dan200.computercraft.api.peripheral.IPeripheral;
 import icbm.classic.api.ICBMClassicAPI;
 import icbm.classic.api.ICBMClassicHelpers;
 import icbm.classic.api.NBTConstants;
 import icbm.classic.api.reg.IExplosiveData;
 import icbm.classic.api.tile.IRadioWaveSender;
+import icbm.classic.computercraft.ICCServersPeripheral;
 import icbm.classic.content.blocks.launcher.TileLauncherPrefab;
 import icbm.classic.content.entity.missile.EntityMissile;
 import icbm.classic.content.entity.missile.MissileFlightType;
@@ -23,6 +28,10 @@ import icbm.classic.prefab.inventory.ExternalInventory;
 import icbm.classic.prefab.inventory.IInventoryProvider;
 import icbm.classic.prefab.tile.IGuiTile;
 import io.netty.buffer.ByteBuf;
+import li.cil.oc.api.machine.Arguments;
+import li.cil.oc.api.machine.Callback;
+import li.cil.oc.api.machine.Context;
+import li.cil.oc.api.network.SimpleComponent;
 import net.minecraft.block.Block;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.entity.player.EntityPlayer;
@@ -34,11 +43,15 @@ import net.minecraft.util.EnumFacing;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.text.TextComponentString;
+import net.minecraftforge.fml.common.Optional;
 import net.minecraftforge.fml.common.network.ByteBufUtils;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
-public class TileCruiseLauncher extends TileLauncherPrefab implements IPacketIDReceiver, IGuiTile, IInventoryProvider<ExternalInventory>
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+@Optional.Interface(iface = "li.cil.oc.api.network.SimpleComponent", modid = "opencomputers")
+public class TileCruiseLauncher extends TileLauncherPrefab implements IPacketIDReceiver, IGuiTile, IInventoryProvider<ExternalInventory>, ICCServersPeripheral, SimpleComponent
 {
     public static final int DESCRIPTION_PACKET_ID = 0;
     public static final int SET_FREQUENCY_PACKET_ID = 1;
@@ -467,4 +480,102 @@ public class TileCruiseLauncher extends TileLauncherPrefab implements IPacketIDR
     {
         return new GuiCruiseLauncher(player, this);
     }
+
+    @Nonnull
+    @Override
+    public String getType() {
+        return "icbm_cruise_launcher_control";
+    }
+
+    @Nonnull
+    @Override
+    public String[] getMethodNames() {
+        return new String[]{"getStatus", "setTarget", "launchMissile"};
+    }
+
+    @Nullable
+    @Override
+    public Object[] callMethod(@Nonnull IComputerAccess iComputerAccess, @Nonnull ILuaContext iLuaContext, int method, @Nonnull Object[] arguments) throws LuaException, InterruptedException {
+        switch (method) {
+            case 0: {
+                return new Object[]{getStatus().substring(2)};
+            }
+            case 1: {
+                if (arguments.length < 3) throw new LuaException("Expected 3 parameters: x,y,z");
+                if (!(arguments[0] instanceof Double)) throw new LuaException("Expected number for parameter 1");
+                if (!(arguments[1] instanceof Double)) throw new LuaException("Expected number for parameter 2");
+                if (!(arguments[2] instanceof Double)) throw new LuaException("Expected number for parameter 3");
+
+                setTarget(new Pos((Double)arguments[0],(Double)arguments[1],(Double)arguments[2]));
+
+            }
+            case 2: {
+                return new Object[]{launch()};
+            }
+            default: {
+                throw new LuaException("Not yet implemented: " + getMethodNames()[method]);
+            }
+        }
+    }
+
+    @Override
+    public void attach(@Nonnull IComputerAccess computer) {
+
+    }
+
+    @Override
+    public void detach(@Nonnull IComputerAccess computer) {
+
+    }
+
+    @Override
+    public boolean equals(@Nullable IPeripheral iPeripheral) {
+        return false;
+    }
+
+    @Override
+    public String getComponentName() {
+        return "icbm_cruise_launcher_control";
+    }
+
+
+    @Callback
+    @Optional.Method(modid = "opencomputers")
+    public Object[] getStatus(Context context, Arguments args) {
+        context.consumeCallBudget(1.0 / 2.0);
+
+        return new Object[]{getStatus().substring(2)};
+    }
+
+    @Callback
+    @Optional.Method(modid = "opencomputers")
+    public Object[] setTarget(Context context, Arguments args) {
+        context.consumeCallBudget(1.0);
+
+        final Pos target = new Pos(args.checkDouble(0), args.checkDouble(1), args.checkDouble(2));
+        setTarget(target);
+
+        return new Object[]{getTarget().equals(target)};
+    }
+
+
+
+    @Callback
+    @Optional.Method(modid = "opencomputers")
+    public Object[] getTarget(Context context, Arguments args) {
+        context.consumeCallBudget(1.0 / 2.0);
+
+        return new Object[]{getTarget().x(),getTarget().y(),getTarget().z()};
+    }
+
+
+
+    @Callback
+    @Optional.Method(modid = "opencomputers")
+    public Object[] launchMissile(Context context, Arguments args) {
+        context.consumeCallBudget(1.0);
+
+        return new Object[]{launch()};
+    }
+
 }
